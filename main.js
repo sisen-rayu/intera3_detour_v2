@@ -37,7 +37,7 @@ function update() {
   sh = window.innerHeight
 
   // イージングかける
-  ease = 0.03;
+  ease = 0.02;
 
   // 進捗度 1へ近づける
   rate += (1 - rate) * ease;
