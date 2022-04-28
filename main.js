@@ -74,6 +74,10 @@ function update() {
   });
 
   window.requestAnimationFrame(update);
+  // 画面の更新される時に実行してくれるやつ
+  // 例)〜〜FPS
+  // 60fpsだいたい早い時=>目指す数字
+  // setIntervalじゃなくてrequestAnimationを使おう〜！！
 }
 
 // ----------------------------------------
