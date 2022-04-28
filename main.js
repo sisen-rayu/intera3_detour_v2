@@ -1,156 +1,120 @@
-// クラス定義テンプレ
-// -----------------------------------------
-Hoge = function(moge) {
-  this.moge = moge;
-};
 
-Hoge.prototype.getMoge = function() {
-  return this.moge;
-};
-// -----------------------------------------
-//test = new Hoge('unko');
-//console.log(test.getMoge());
+// 最終目標値までの進捗度
+rate = 0;
+
+// 最終目標値
+clickPos = {x:0, y:0};
+
+// 現在値
+movePos = {x:0, y:0};
+
+init();
 
 
+// 初期設定
+function init() {
+
+  // ステージサイズ
+  sw = window.innerWidth
+  sh = window.innerHeight
+
+  // 最初はランダム
+  clickPos.x = random(0, sw);
+  clickPos.y = random(0, sh);
+
+  // クリックしたところを最終目標値に
+  $(window).on('click', _eClick);
+
+}
+
+
+// 毎フレーム実行
 window.requestAnimationFrame(update);
-$(window).on('mousemove', _eMouseMove);
-
-
-// マウス位置
-mouse = {
-  x:0,
-  y:0
-};
-
-// 動かすオブジェクト
-dot = $('.dot')
-
-// 動かすオブジェクトの位置
-dotPos = {
-  x:0,
-  y:0,
-  vx:0,
-  vy:0
-};
-
-// 画面全体
-stage = $('.mv')
-
 function update() {
 
-  // 画面サイズ
-  sw = window.innerWidth;
-  sh = window.innerHeight;
+  // ステージサイズ
+  sw = window.innerWidth
+  sh = window.innerHeight
 
-  // 目標値
-  // マウス位置
-  tx = mouse.x;
-  ty = mouse.y;
+  // イージングかける
+  ease = 0.03;
 
-  // 目標値にだんだんと近づける
-  ease = 0.15; // こいつが小さいとよりゆっくりと近くようになる
-  dotPos.x += (tx - dotPos.x) * ease;
-  dotPos.y += (ty - dotPos.y) * ease;
+  // 進捗度 1へ近づける
+  rate += (1 - rate) * ease;
 
-  // 目標値に引っ張られるように近く
-  // power = 0.7; // 大きいとより引っ張られるようになる
-  // dotPos.vx += (tx - dotPos.x) * power;
-  // dotPos.vy += (ty - dotPos.y) * power;
-  // dotPos.x += (dotPos.vx *= power);
-  // dotPos.y += (dotPos.vy *= power);
-
-  // ２地点の距離
-  dx = tx - dotPos.x;
-  dy = ty - dotPos.y;
-  dist = Math.sqrt(dx * dx + dy * dy);
-
-  // スケール
-  scale = map(dist, 1, 6, 0, sw * 0.5);
-
-  // ボーダーの太さ
-  borderWidth = map(dist, 5, 50, 0, sw * 0.5);
-  // borderWidth = 0;
-
-  // 背景色
-  alpha = map(dist, 0, 1, 0, sw * 0.1);
-  backgroundColor = lerpColor({r:0,g:176,b:255}, {r:211,g:47,b:47}, alpha);
-
-  // ボーダー色
-  alpha = map(dist, 0, 1, 0, sw * 0.25);
-  borderColor = backgroundColor;
-
-  // ドロップシャドウCSSのあれつくる
-  offset  = map(dist, 0, 2, 0, sw * 0.25);
-  offsetX = map(dx, -1, 1, -sw * 0.25, sw * 0.25);
-  offsetY = map(dy, -1, 1, -sh * 0.25, sh * 0.25);
-
-  shadow = '';
-  gray = 0;
-  num = ~~(map(dist, 0, 100, 0, sw * 0.25));
-  for(var i = 0; i < num; i++) {
-    x = i * offset * offsetX;
-    y = i * offset * offsetY;
-    shadow += x + 'px ' + y + 'px 0px ' + backgroundColor;
-    if(i != num - 1){
-      shadow += ',';
-    }
+  // だいたい1に近づいたら目標値変更
+  if(Math.abs(1 - rate) < 0.005) {
+    _eClick();
   }
 
-  // オブジェクトの情報更新
-  // 位置指定時、基準点を真ん中にするためサイズの半分だけずらす
-  TweenMax.set(dot, {
-    x:dotPos.x - dot.width() * 0.5,
-    y:dotPos.y - dot.height() * 0.5,
-    scale:scale,
-    borderWidth:0,
-    backgroundColor:backgroundColor,
-    borderColor:borderColor,
-    boxShadow:shadow
+  // 寄り道ターゲット
+  tg = $('.js-tg');
+
+  // 画面真ん中へ寄り道
+  tgX = sw * 0.5;
+  tgY = sh * 0.5;
+
+  // 動かすやつ
+  move = $('.js-move');
+
+  // 進捗度を使って、寄り道しつつ最終的にクリックした位置へ行くように
+  moveX = (tgX * (1 - rate)) + (clickPos.x * rate);
+  moveY = (tgY * (1 - rate)) + (clickPos.y * rate);
+  movePos.x += (moveX - movePos.x) * ease;
+  movePos.y += (moveY - movePos.y) * ease;
+
+  // DOM更新
+  TweenMax.set(move, {
+    x:movePos.x,
+    y:movePos.y
   });
-
-  // 画面全体
-  borderWidth = map(dist, 5, sh * 0.5, 0, sw * 0.75);
-
-  TweenMax.set(stage, {
-    borderWidth:0,
-    backgroundColor:lerpColor({r:0,g:176,b:255}, {r:211,g:47,b:47}, 1 - alpha)
-    // borderColor:borderColor
+  TweenMax.set(tg, {
+    x:tgX,
+    y:tgY
   });
 
   window.requestAnimationFrame(update);
 }
 
+// ----------------------------------------
+// イベント 画面クリック
+// ----------------------------------------
+function _eClick(e) {
 
-function _eMouseMove(e) {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
-}
+  rate = 0;
 
-// 範囲変換
-// @val     : 変換したい値
-// @toMin   : 変換後の最小値
-// @toMax   : 変換後の最大値
-// @fromMin : 変換前の最小値
-// @fromMax : 変換前の最大値
-function map(val, toMin, toMax, fromMin, fromMax) {
-  if(val <= fromMin) {
-    return toMin;
+  if(e == null) {
+    clickPos.x = random(0, window.innerWidth);
+    clickPos.y = random(0, window.innerHeight);
+  } else {
+    clickPos.x = e.clientX;
+    clickPos.y = e.clientY;
   }
-  if(val >= fromMax) {
-    return toMax;
-  }
-  p = (toMax - toMin) / (fromMax - fromMin);
-  return ((val - fromMin) * p) + toMin;
+
 }
 
-// 線形補間
-// @from  : 始点
-// @to    : 終点
-// @alpha : 位置
-function lerp(from, to, alpha) {
-  return (from * (1 - alpha)) + (to * alpha);
+
+
+
+// ----------------------------------------
+// 度からラジアンに変換
+// @val : 度
+// ----------------------------------------
+function radian(val) {
+  return val * Math.PI / 180;
 }
 
-function lerpColor(from, to, alpha) {
-  return 'rgb(' + lerp(from.r, to.r, alpha) + ',' + lerp(from.g, to.g, alpha) + ',' + lerp(from.b, to.b, alpha) +')';
+// ----------------------------------------
+// ラジアンから度に変換
+// @val : ラジアン
+// ----------------------------------------
+function degree(val) {
+  return val * 180 / Math.PI;
+}
+
+// ----------------------------------------
+// minからmaxまでランダム
+// ----------------------------------------
+function random(min, max) {
+  return Math.random() * (max - min) + min;
 }
